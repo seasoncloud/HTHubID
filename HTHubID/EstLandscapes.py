@@ -144,9 +144,18 @@ class LandscapeEstimator:
 
 
         if neighbor_mode=='NNeighbors':
+            outpath0 = outdir+"/"+str(sample_name)+"/Plots/"+"/"+str(assay)+"_"+str(sample_name)+"_n_neighbors_"+str(n_neighbors)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_"
+        elif neighbor_mode=='radius':
+            outpath0 = outdir+"/"+str(sample_name)+"/Plots/"+"/"+str(assay)+"_"+str(sample_name)+"_eps_"+str(eps)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_"
+
+
+        if neighbor_mode=='NNeighbors':
             outpath = outdir+"/"+str(sample_name)+"/Plots/"+"/"+str(assay)+"_"+str(sample_name)+"_n_neighbors_"+str(n_neighbors)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_"
         elif neighbor_mode=='radius':
             outpath = outdir+"/"+str(sample_name)+"/Plots/"+"/"+str(assay)+"_"+str(sample_name)+"_eps_"+str(eps)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_"
+
+        
+        tmp0=PlotMajCluster(adata=adata_sub,majcluster=clusters_W, outpath=outpath0,  spot_size=spot_size, sample_name=sample_name, label='SecTopic', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set)
         tmp=PlotActivity(adata=adata_sub,prop=W, outpath=outpath, fraction=fraction, ncol=ncol, spot_size=spot_size, random_state=random_state, sample_name=sample_name, label='SecTopic', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set)
 
         print("Landscape estimation completed!")
