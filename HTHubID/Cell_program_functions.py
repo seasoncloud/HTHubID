@@ -92,12 +92,14 @@ def IdentCellProgram(cellbygene=None, sample_name='Sample', assay='assay' ,doc_t
         if len(topicid) != Ｋ:
             sys.exit("nrows of imported prop is not equal to the number of topics!")
     else: 
-        prop = np.empty((dat.shape[0],K), float)#pd.DataFrame([])
+        prop = np.empty((dat.shape[0],T), float)#pd.DataFrame([])
         for ii in range(dat.shape[0]):
-            rr=np.zeros(K)
+            rr=np.zeros(T)
             result=np.array(result_dist[ii])
-            rr[result[:,0].astype(int)]=result[:,1]
-            rr=np.reshape(rr,(1,K)) 
+            #print(result)
+            if len(result)>0:
+                rr[result[:,0].astype(int)]=result[:,1]
+            rr=np.reshape(rr,(1,T)) 
             prop[ii,:]=rr
         # save prop
         prop= pd.DataFrame(prop)

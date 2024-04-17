@@ -15,9 +15,9 @@ from .Visualizations import *
 import matplotlib.backends.backend_pdf 
 
 class LandscapeEstimator:
-    def __init__(self, adata_sub=None, prop=None, program=None, sample_name='Sample', assay='merFISH', cellid=None, topicid=None,
+    def __init__(self, adata_sub=None, prop=None, program=None, sample_name='Sample', assay='merFISH', cellid=None, topicid=None, ndec=4,
                  neighbor_mode='NNeighbors', n_neighbors=500, eps=500, col_type='program', outdir='./', n_components=10, init='random',
-                 random_state=0, alpha_W=0, fraction=0.05, ncol=5, spot_size=100):
+                 random_state=0, alpha_W=0, fraction=0.05, ncol=5, spot_size=100, multi_samples=False, tumor_only_est=False, plot_set=None):
         self.adata_sub = adata_sub
         self.prop = prop
         self.program = program
@@ -25,6 +25,7 @@ class LandscapeEstimator:
         self.assay = assay
         self.cellid = cellid
         self.topicid = topicid
+        self.ndec = ndec
         self.neighbor_mode = neighbor_mode
         self.n_neighbors = n_neighbors
         self.eps = eps
@@ -37,6 +38,9 @@ class LandscapeEstimator:
         self.fraction = fraction
         self.ncol = ncol
         self.spot_size = spot_size
+        self.multi_samples = multi_samples
+        self.tumor_only_est = tumor_only_est
+        self.plot_set = plot_set
 
     def EstLandscape(self):
         adata_sub = self.adata_sub
@@ -46,6 +50,7 @@ class LandscapeEstimator:
         assay = self.assay
         cellid = self.cellid
         topicid = self.topicid
+        ndec = self.ndec
         neighbor_mode = self.neighbor_mode
         n_neighbors = self.n_neighbors
         col_type = self.col_type
@@ -58,13 +63,16 @@ class LandscapeEstimator:
         fraction = self.fraction
         ncol = self.ncol
         spot_size = self.spot_size
+        multi_samples =  self.multi_samples
+        tumor_only_est = self.tumor_only_est
+        plot_set = self.plot_set
 
         os.makedirs(outdir+"/"+str(sample_name)+"/Tables/", exist_ok=True)
         os.makedirs(outdir+"/"+str(sample_name)+"/Plots/", exist_ok=True)
 
         # select informative topics
         if program is not None:
-            idx_topic=Sel_topics(program=program, ndec=4)
+            idx_topic=Sel_topics(program=program, ndec=ndec)
         else:
             idx_topic=np.array(range(prop.shape[1]))
 
@@ -92,11 +100,18 @@ class LandscapeEstimator:
 
         # get neighborhood info
         print("Running GenNeighborhood...")
-        cellbygene_smooth=GenNeighborhood(cellbygene=cellbygene, metadata=metadata, mode=neighbor_mode, n_neighbors=n_neighbors, sample_name=sample_name,col_type=col_type, eps=eps, outdir=outdir, assay=assay) 
+        cellbygene_smooth=GenNeighborhood(cellbygene=cellbygene, metadata=metadata, mode=neighbor_mode, n_neighbors=n_neighbors, sample_name=sample_name,col_type=col_type, eps=eps, outdir=outdir, assay=assay, multi_samples=multi_samples) 
+
+
         print("GenNeighborhood succeeded.")
 
         # identify landscapes
         print("Identifying Landscapes...")
+        if tumor_only_est==True:
+            tumor_label=adata_sub.obs['istumor']
+            t_idx=np.where(tumor_label==True)[0]
+            cellbygene_smooth=cellbygene_smooth.iloc[t_idx,:]
+
         Landscapes = IdentLandscape(cellbygene_smooth=cellbygene_smooth, n_components=n_components, init=init, random_state=random_state, alpha_W=alpha_W)
         W=Landscapes['Cell_Landscape']
         H=Landscapes['Landscape_Program']
@@ -114,14 +129,25 @@ class LandscapeEstimator:
         # get the main landscape of each cell for plotting
         clusters_W = GetMain(W)
 
+
         # plot each landscapes
         print("Plotting...")
-        if neighbor_mode=='NNeighbors':
-            outpath = outdir+"/"+str(sample_name)+"/Plots/"+"/"+str(assay)+"_"+str(sample_name)+"_n_neighbors_"+str(n_neighbors)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_sub"+str(fraction)+"_all.pdf"
-        elif neighbor_mode=='radius':
-            outpath = outdir+"/"+str(sample_name)+"/Plots/"+"/"+str(assay)+"_"+str(sample_name)+"_eps_"+str(eps)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_sub"+str(fraction)+"_all.pdf"
+        if tumor_only_est==True:
+            W_ori=W.copy()
+            W0=np.array(W)
+            W2=np.zeros((adata_sub.shape[0], int(n_components)))
+            W2[t_idx,:]=W0
+            W=W2
+            W=pd.DataFrame(W)
+            W.columns=W_ori.columns
+            #W.index=W_ori.index
 
-        tmp=PlotActivity(adata=adata_sub,prop=W, outpath=outpath, fraction=fraction, ncol=ncol, spot_size=spot_size, random_state=random_state, sample_name=sample_name, label='SecTopic', ntopics=n_components)
+
+        if neighbor_mode=='NNeighbors':
+            outpath = outdir+"/"+str(sample_name)+"/Plots/"+"/"+str(assay)+"_"+str(sample_name)+"_n_neighbors_"+str(n_neighbors)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_"
+        elif neighbor_mode=='radius':
+            outpath = outdir+"/"+str(sample_name)+"/Plots/"+"/"+str(assay)+"_"+str(sample_name)+"_eps_"+str(eps)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_"
+        tmp=PlotActivity(adata=adata_sub,prop=W, outpath=outpath, fraction=fraction, ncol=ncol, spot_size=spot_size, random_state=random_state, sample_name=sample_name, label='SecTopic', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set)
 
         print("Landscape estimation completed!")
 
@@ -249,7 +275,7 @@ def main():
     cellid=cellid.loc[sel_id]
  
     # run EstLandscape
-    landscape_estimator = LandscapeEstimator(adata_sub=adata_sub, prop=prop, program=program, sample_name=sample_name, assay=assay, cellid=cellid, topicid=topicid, neighbor_mode=neighbor_mode, n_neighbors=n_neighbors, eps=eps, col_type=col_type, outdir=outdir, n_components=n_components, init=init, random_state=random_state,alpha_W=alpha_W, fraction=fraction, ncol=ncol, spot_size=spot_size)
+    landscape_estimator = LandscapeEstimator(adata_sub=adata_sub, prop=prop, program=program, sample_name=sample_name, assay=assay, cellid=cellid, topicid=topicid, neighbor_mode=neighbor_mode, n_neighbors=n_neighbors, eps=eps, col_type=col_type, outdir=outdir, n_components=n_components, init=init, random_state=random_state,alpha_W=alpha_W, fraction=fraction, ncol=ncol, spot_size=spot_size, multi_samples=None, plot_set=None)
     # Call the EstLandscape method
     landscape_estimator.EstLandscape()
 

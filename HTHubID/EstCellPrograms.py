@@ -21,7 +21,7 @@ from .Visualizations import *
 
 class CellProgramEstimator:
     def __init__(self, adata_sub=None, sample_name='Sample', assay='merFISH',
-                 outdir='./', is_filter=True, K=100,T=100, gamma=1,alpha=1,kappa=1, random_state=0, fraction=0.05, ncol=5, spot_size_cluster=100, spot_size_activity=100):
+                 outdir='./', is_filter=True, K=100,T=100, gamma=1,alpha=1,kappa=1, random_state=0, fraction=0.05, ncol=5, spot_size_cluster=100, spot_size_activity=100, multi_samples=False, plot_set=None):
         self.adata_sub = adata_sub
         self.sample_name = sample_name
         self.assay = assay
@@ -37,6 +37,8 @@ class CellProgramEstimator:
         self.ncol = ncol
         self.spot_size_cluster = spot_size_cluster
         self.spot_size_activity = spot_size_activity
+        self.multi_samples = multi_samples
+        self.plot_set = plot_set
 
 
     def EstCellPrograms(self):
@@ -55,6 +57,8 @@ class CellProgramEstimator:
         ncol = self.ncol
         spot_size_cluster = self.spot_size_cluster
         spot_size_activity = self.spot_size_activity
+        multi_samples = self.multi_samples
+        plot_set = self.plot_set
 
         os.makedirs(outdir+"/"+str(sample_name)+"/Tables/", exist_ok=True)
         os.makedirs(outdir+"/"+str(sample_name)+"/Plots/", exist_ok=True)
@@ -140,11 +144,9 @@ class CellProgramEstimator:
 
         # plot each cell program
         print("Plotting...")
-
-
-        tmp1=PlotMajCluster(adata=adata_sub,majcluster=clusters_W, outpath=outdir+"/"+str(sample_name)+"/Plots/"+str(assay)+"_"+str(sample_name)+"_major_topics_all.pdf",  spot_size=spot_size_cluster, sample_name=sample_name, label='CellProgram', ntopics=K)
-        tmp2=PlotActivity(adata=adata_sub,prop=Cell_Program_filtered,outpath=outdir+"/"+str(sample_name)+"/Plots/"+str(assay)+"_"+str(sample_name)+"_sub"+str(fraction)+"_showall.pdf",
-                         fraction=fraction, ncol=ncol, spot_size=spot_size_activity, random_state=random_state, sample_name=sample_name, label='CellProgram', ntopics=n_components)
+        tmp1=PlotMajCluster(adata=adata_sub,majcluster=clusters_W, outpath=outdir+"/"+str(sample_name)+"/Plots/"+str(assay)+"_"+str(sample_name)+"_",  spot_size=spot_size_cluster, sample_name=sample_name, label='CellProgram', ntopics=K, multi_samples=multi_samples, plot_set=plot_set)
+        tmp2=PlotActivity(adata=adata_sub,prop=Cell_Program_filtered,outpath=outdir+"/"+str(sample_name)+"/Plots/"+str(assay)+"_"+str(sample_name)+"_sub"+str(fraction)+"_",
+                         fraction=fraction, ncol=ncol, spot_size=spot_size_activity, random_state=random_state, sample_name=sample_name, label='CellProgram', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set)
 
         print("Cell programs estimation completed!")
 
@@ -197,7 +199,7 @@ def main():
     # mtx = mtx.iloc[:,1:]
  
     # est cell program
-    cellprogram_estimator = CellProgramEstimator(adata_sub=adata_sub, sample_name=sample_name, assay=assay, outdir=outdir, is_filter=is_filter, K=K, T=T, gamma=gamma, alpha=alpha, kappa=kappa, random_state=random_state, fraction=fraction, ncol=ncol, spot_size_cluster=spot_size_cluster, spot_size_activity=spot_size_activity)
+    cellprogram_estimator = CellProgramEstimator(adata_sub=adata_sub, sample_name=sample_name, assay=assay, outdir=outdir, is_filter=is_filter, K=K, T=T, gamma=gamma, alpha=alpha, kappa=kappa, random_state=random_state, fraction=fraction, ncol=ncol, spot_size_cluster=spot_size_cluster, spot_size_activity=spot_size_activity, multi_samples=multi_samples, plot_set=plot_set)
     # Call the est cell program method
     cellprogram_estimator.EstCellPrograms()
 
