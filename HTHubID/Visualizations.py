@@ -102,7 +102,7 @@ def PlotActivity(adata=None,prop=None, outpath="./", fraction=0.05, ncol=5, minn
 
 
 
-def PlotMajCluster(adata=None,majcluster='0', outpath="./", fraction=1, minnx=None, maxxx=None, minny=None, maxxy=None, spot_size=100, sample_name='sample', label='HDP', ntopics=0, multi_samples=False, multi_sample_names=None, plot_set=None):# n_neighbors=0, n_components=0, alpha_W=0):
+def PlotMajCluster(adata=None, majcluster='0', outpath="./", fraction=1, minnx=None, maxxx=None, minny=None, maxxy=None, spot_size=100, sample_name='sample', label='HDP', ntopics=0, multi_samples=False, multi_sample_names=None, plot_set=None, palette=None):# n_neighbors=0, n_components=0, alpha_W=0):
 
     adata.obs['HDP_cluster']=list(map(str, majcluster))
     adata.obsm['spatial']=np.array(adata.obsm['spatial'])
@@ -117,13 +117,12 @@ def PlotMajCluster(adata=None,majcluster='0', outpath="./", fraction=1, minnx=No
 
         #if outpath == './':
         outpath = str(outpath) + "Plot_major_cluster_sub"+str(fraction)+".pdf"
-
         #pdf = matplotlib.backends.backend_pdf.PdfPages(outpath+"/Plots/"+str(sample_name)+"/merFISH_"+str(sample_name)+"_n_neighbors_"+str(n_neighbors)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_sub_all.pdf")
         pdf = matplotlib.backends.backend_pdf.PdfPages(outpath)
         fig, (ax1) = plt.subplots(1, 1, figsize=(20,10), gridspec_kw={'wspace':0.9})
         ax1.set_xlim(minnx,maxxx)
         ax1.set_ylim(minny,maxxy)
-        sc.pl.spatial(adata, spot_size=spot_size, color=['HDP_cluster'],title="Major Cell programs" , show=False, ax=ax1)
+        sc.pl.spatial(adata, spot_size=spot_size, color=['HDP_cluster'],palette=palette,title="Major Cell programs" , show=False, ax=ax1)
         pdf.savefig( fig )
         pdf.close()
 
@@ -156,7 +155,7 @@ def PlotMajCluster(adata=None,majcluster='0', outpath="./", fraction=1, minnx=No
             fig, (ax1) = plt.subplots(1, 1, figsize=(20,10), gridspec_kw={'wspace':0.9})
             ax1.set_xlim(minnx,maxxx)
             ax1.set_ylim(minny,maxxy)
-            sc.pl.spatial(adata_sub, spot_size=spot_size, color=['HDP_cluster'],title="Major Cell programs" , show=False, ax=ax1)
+            sc.pl.spatial(adata_sub, spot_size=spot_size, color=['HDP_cluster'],palette=palette,title="Major Cell programs" , show=False, ax=ax1)
             pdf.savefig( fig )
             pdf.close()
             print(outpath2)

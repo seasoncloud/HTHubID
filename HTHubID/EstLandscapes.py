@@ -17,7 +17,7 @@ import matplotlib.backends.backend_pdf
 class LandscapeEstimator:
     def __init__(self, adata_sub=None, prop=None, program=None, sample_name='Sample', assay='merFISH', cellid=None, topicid=None, ndec=4,
                  neighbor_mode='NNeighbors', n_neighbors=500, eps=500, col_type='program', outdir='./', n_components=10, init='random',
-                 random_state=0, alpha_W=0, fraction=0.05, ncol=5, spot_size=100, multi_samples=False, tumor_only_est=False, plot_set=None):
+                 random_state=0, alpha_W=0, fraction=0.05, ncol=5, spot_size=100, multi_samples=False, tumor_only_est=False, plot_set=None, palette=None):
         self.adata_sub = adata_sub
         self.prop = prop
         self.program = program
@@ -41,6 +41,7 @@ class LandscapeEstimator:
         self.multi_samples = multi_samples
         self.tumor_only_est = tumor_only_est
         self.plot_set = plot_set
+        self.palette = palette
 
     def EstLandscape(self):
         adata_sub = self.adata_sub
@@ -66,6 +67,7 @@ class LandscapeEstimator:
         multi_samples =  self.multi_samples
         tumor_only_est = self.tumor_only_est
         plot_set = self.plot_set
+        palette = self.palette
 
         os.makedirs(outdir+"/"+str(sample_name)+"/Tables/", exist_ok=True)
         os.makedirs(outdir+"/"+str(sample_name)+"/Plots/", exist_ok=True)
@@ -143,6 +145,19 @@ class LandscapeEstimator:
             #W.index=W_ori.index
 
 
+
+        # plot max landscapes
+        print("Plotting...")
+        if tumor_only_est==True:
+            clusters_W_ori=clusters_W.copy()
+            W0=np.array(clusters_W)
+            W2=np.repeat('NN', adata_sub.shape[0])
+            W2[t_idx]=W0
+            clusters_W=W2
+            clusters_W=clusters_W.tolist()
+            #W.index=W_ori.index
+
+
         if neighbor_mode=='NNeighbors':
             outpath0 = outdir+"/"+str(sample_name)+"/Plots/"+"/"+str(assay)+"_"+str(sample_name)+"_n_neighbors_"+str(n_neighbors)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_"
         elif neighbor_mode=='radius':
@@ -155,7 +170,7 @@ class LandscapeEstimator:
             outpath = outdir+"/"+str(sample_name)+"/Plots/"+"/"+str(assay)+"_"+str(sample_name)+"_eps_"+str(eps)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_"
 
         
-        tmp0=PlotMajCluster(adata=adata_sub,majcluster=clusters_W, outpath=outpath0,  spot_size=spot_size, sample_name=sample_name, label='SecTopic', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set)
+        tmp0=PlotMajCluster(adata=adata_sub,majcluster=clusters_W, outpath=outpath0,  spot_size=spot_size, sample_name=sample_name, label='SecTopic', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set, palette=palette)
         tmp=PlotActivity(adata=adata_sub,prop=W, outpath=outpath, fraction=fraction, ncol=ncol, spot_size=spot_size, random_state=random_state, sample_name=sample_name, label='SecTopic', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set)
 
         print("Landscape estimation completed!")
