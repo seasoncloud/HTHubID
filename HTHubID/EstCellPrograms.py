@@ -21,7 +21,7 @@ from .Visualizations import *
 
 class CellProgramEstimator:
     def __init__(self, adata_sub=None, sample_name='Sample', assay='merFISH',
-                 outdir='./', is_filter=True, K=100,T=100, gamma=1,alpha=1,kappa=1, random_state=0, fraction=0.05, ncol=5, spot_size_cluster=100, spot_size_activity=100, multi_samples=False, plot_set=None):
+                 outdir='./', is_filter=True, K=100,T=100, gamma=1,alpha=1,kappa=1, random_state=0, ndec=3, fraction=0.05, ncol=5, spot_size_cluster=100, spot_size_activity=100, multi_samples=False, plot_set=None):
         self.adata_sub = adata_sub
         self.sample_name = sample_name
         self.assay = assay
@@ -39,6 +39,7 @@ class CellProgramEstimator:
         self.spot_size_activity = spot_size_activity
         self.multi_samples = multi_samples
         self.plot_set = plot_set
+        self.ndec = ndec
 
 
     def EstCellPrograms(self):
@@ -59,6 +60,7 @@ class CellProgramEstimator:
         spot_size_activity = self.spot_size_activity
         multi_samples = self.multi_samples
         plot_set = self.plot_set
+        ndec = self.ndec
 
         os.makedirs(outdir+"/"+str(sample_name)+"/Tables/", exist_ok=True)
         os.makedirs(outdir+"/"+str(sample_name)+"/Plots/", exist_ok=True)
@@ -91,6 +93,23 @@ class CellProgramEstimator:
         Cell_Program = cellprogram['Cell_Program']
         Gene_Program = cellprogram['Gene_Program']
         print("Cell program estimation completed!")
+
+
+
+        ## filter with all cells
+        if is_filter==True:
+            # # select prop
+            prop2=np.array(Cell_Program)
+            sel_idx=[]
+            for ii in range((prop2.shape[1])):
+                rr=np.ptp(prop2[:,ii])
+                if rr>0.000000001:
+                    sel_idx.append(ii)
+            Gene_Program=Gene_Program.iloc[:,sel_idx]
+            print(str(len(sel_idx))+" topics are selected after cell ragnefiltering.")
+            Cell_Program=Cell_Program.iloc[:,sel_idx]
+            
+              
 
 
         # get the main Cell program of each cell for plotting
@@ -128,7 +147,7 @@ class CellProgramEstimator:
         
         # filter out non informative topics
         if is_filter==True:
-            ndec=4
+            #ndec=4
             idx_topic=Sel_topics(program=Gene_Program_weighted, ndec=ndec)
             Gene_Program_weighted_filtered=Gene_Program_weighted.iloc[:,idx_topic]
             print(str(len(idx_topic))+" topics are selected after filtering.")

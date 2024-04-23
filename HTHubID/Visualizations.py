@@ -18,6 +18,16 @@ def PlotActivity(adata=None,prop=None, outpath="./", fraction=0.05, ncol=5, minn
         adata.obs[prop.columns[ii]]=prop_W[:,ii]
     adata.obsm['spatial']=np.array(adata.obsm['spatial'])
 
+    # # # select prop
+    # prop2=np.array(prop)
+    # sel_idx=[]
+    # for ii in range((prop2.shape[1])):
+    #     rr=np.ptp(prop2[:,ii])
+    #     if rr>0.000000001:
+    #         sel_idx.append(ii)
+
+    # prop=prop        
+
     if multi_samples== False:
         adata_sub_sub=sc.pp.subsample(adata, fraction=fraction, copy=True, random_state=random_state)
 
@@ -72,7 +82,7 @@ def PlotActivity(adata=None,prop=None, outpath="./", fraction=0.05, ncol=5, minn
             #pdf = matplotlib.backends.backend_pdf.PdfPages(outpath+"/Plots/"+str(sample_name)+"/merFISH_"+str(sample_name)+"_n_neighbors_"+str(n_neighbors)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_sub_all.pdf")
             pdf = matplotlib.backends.backend_pdf.PdfPages(outpath2)
             nrow = math.ceil(ntopics/ncol)
-            fig, ax = plt.subplots(nrow,ncol, figsize=(6*ncol+2,6*nrow))
+            fig, ax = plt.subplots(nrow,ncol, figsize=(6*ncol+2,6*nrow*2))
             if nrow>1:
                 for ii in range(nrow):
                     for jj in range(ncol):
