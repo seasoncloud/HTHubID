@@ -21,12 +21,13 @@ from .Visualizations import *
 
 class CellProgramEstimator:
     def __init__(self, adata_sub=None, sample_name='Sample', assay='merFISH',
-                 outdir='./', is_filter=True, K=100,T=100, gamma=1,alpha=1,kappa=1, random_state=0, ndec=3, fraction=0.05, ncol=5, spot_size_cluster=100, spot_size_activity=100, multi_samples=False, plot_set=None):
+                 outdir='./', is_filter_cell=True, is_filter_weights=True, K=100,T=100, gamma=1,alpha=1,kappa=1, random_state=0, ndec=3, plot=True, fraction=0.05, ncol=5, spot_size_cluster=100, spot_size_activity=100, multi_samples=False, plot_set=None):
         self.adata_sub = adata_sub
         self.sample_name = sample_name
         self.assay = assay
         self.outdir = outdir
-        self.is_filter= is_filter
+        self.is_filter_cell= is_filter_cell
+        self.is_filter_weights = is_filter_weights
         self.K = K
         self.T = T
         self.gamma = gamma
@@ -40,6 +41,7 @@ class CellProgramEstimator:
         self.multi_samples = multi_samples
         self.plot_set = plot_set
         self.ndec = ndec
+        self.plot = plot
 
 
     def EstCellPrograms(self):
@@ -47,7 +49,8 @@ class CellProgramEstimator:
         sample_name = self.sample_name
         assay = self.assay
         outdir = self.outdir
-        is_filter= self.is_filter
+        is_filter_cell = self.is_filter_cell
+        is_filter_weights = self.is_filter_weights
         K = self.K
         T = self.T
         gamma = self.gamma
@@ -61,6 +64,7 @@ class CellProgramEstimator:
         multi_samples = self.multi_samples
         plot_set = self.plot_set
         ndec = self.ndec
+        plot = self.plot
 
         os.makedirs(outdir+"/"+str(sample_name)+"/Tables/", exist_ok=True)
         os.makedirs(outdir+"/"+str(sample_name)+"/Plots/", exist_ok=True)
@@ -97,7 +101,7 @@ class CellProgramEstimator:
 
 
         ## filter with all cells
-        if is_filter==True:
+        if is_filter_cell==True:
             # # select prop
             prop2=np.array(Cell_Program)
             sel_idx=[]
@@ -106,8 +110,12 @@ class CellProgramEstimator:
                 if rr>0.000000001:
                     sel_idx.append(ii)
             Gene_Program=Gene_Program.iloc[:,sel_idx]
-            print(str(len(sel_idx))+" topics are selected after cell ragnefiltering.")
+            print(str(len(sel_idx))+" topics are selected after cell rangefiltering.")
             Cell_Program=Cell_Program.iloc[:,sel_idx]
+            n_components=len(sel_idx)
+        else:
+            n_components=K
+
             
               
 
@@ -146,7 +154,7 @@ class CellProgramEstimator:
 
         
         # filter out non informative topics
-        if is_filter==True:
+        if is_filter_weights==True:
             #ndec=4
             idx_topic=Sel_topics(program=Gene_Program_weighted, ndec=ndec)
             Gene_Program_weighted_filtered=Gene_Program_weighted.iloc[:,idx_topic]
@@ -158,13 +166,14 @@ class CellProgramEstimator:
             Gene_Program_weighted_filtered.to_csv(topic_path+'/'+"/topic_info_weighted_filtered_"+str(ndec)+"_"+str(sample_name)+"_"+str(assay)+".csv")
             rank20.iloc[idx_topic,:].to_csv(topic_path+"/top20_genes_weighted_filtered"+str(ndec)+"_"+str(sample_name)+"_"+str(assay)+".csv", index=True, header=False, quoting=1)
         else:
-            n_components=K
+            #n_components=K
             Cell_Program_filtered=Cell_Program
 
         # plot each cell program
         print("Plotting...")
-        tmp1=PlotMajCluster(adata=adata_sub,majcluster=clusters_W, outpath=outdir+"/"+str(sample_name)+"/Plots/"+str(assay)+"_"+str(sample_name)+"_",  spot_size=spot_size_cluster, sample_name=sample_name, label='CellProgram', ntopics=K, multi_samples=multi_samples, plot_set=plot_set)
-        tmp2=PlotActivity(adata=adata_sub,prop=Cell_Program_filtered,outpath=outdir+"/"+str(sample_name)+"/Plots/"+str(assay)+"_"+str(sample_name)+"_sub"+str(fraction)+"_",
+        if plot==True:
+            tmp1=PlotMajCluster(adata=adata_sub,majcluster=clusters_W, outpath=outdir+"/"+str(sample_name)+"/Plots/"+str(assay)+"_"+str(sample_name)+"_",  spot_size=spot_size_cluster, sample_name=sample_name, label='CellProgram', ntopics=K, multi_samples=multi_samples, plot_set=plot_set)
+            tmp2=PlotActivity(adata=adata_sub,prop=Cell_Program_filtered,outpath=outdir+"/"+str(sample_name)+"/Plots/"+str(assay)+"_"+str(sample_name)+"_sub"+str(fraction)+"_",
                          fraction=fraction, ncol=ncol, spot_size=spot_size_activity, random_state=random_state, sample_name=sample_name, label='CellProgram', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set)
 
         print("Cell programs estimation completed!")
@@ -199,7 +208,8 @@ def main():
     sample_name =  args.sample_name
     assay = args.assay
     outdir = args.outdir
-    is_filter= args.is_filter
+    is_filter_cell = args.is_filter_cell
+    is_filter_weights = args.is_filter_weights
     K = args.K
     T = args.T 
     gamma = args.gamma

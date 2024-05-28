@@ -60,12 +60,16 @@ def IdentCellProgram(cellbygene=None, sample_name='Sample', assay='assay' ,doc_t
         with open(BoW_corpus_path+'/'+str(sample_name)+'_'+str(assay)+'_BoW_corpus_2.pkl', 'rb') as f3:
             BoW_corpus2 = pickle.load(f3)
         BoW_corpus= BoW_corpus + BoW_corpus2
+        with open(BoW_corpus_path+'/'+str(sample_name)+'_'+str(assay)+'_dictionary.pkl', 'rb') as fd:
+            dictionary = pickle.load(fd)
     else:
         BoW_corpus = [dictionary.doc2bow(doc, allow_update=True) for doc in doc_tokenized]
         with open(BoW_corpus_path+'/'+str(sample_name)+'_'+str(assay)+'_BoW_corpus_1.pkl', 'wb') as f2:
             pickle.dump(BoW_corpus[0:int(len(BoW_corpus)/2)], f2)
         with open(BoW_corpus_path+'/'+str(sample_name)+'_'+str(assay)+'_BoW_corpus_2.pkl', 'wb') as f3:
             pickle.dump(BoW_corpus[int(len(BoW_corpus)/2):len(BoW_corpus)], f3)
+        with open(BoW_corpus_path+'/'+str(sample_name)+'_'+str(assay)+'_dictionary.pkl', 'wb') as fd:
+            pickle.dump(dictionary, fd)
 
     # train HDP model
     print("Training the HDP model.")

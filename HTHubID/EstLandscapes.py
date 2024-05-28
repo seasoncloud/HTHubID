@@ -17,7 +17,8 @@ import matplotlib.backends.backend_pdf
 class LandscapeEstimator:
     def __init__(self, adata_sub=None, prop=None, program=None, sample_name='Sample', assay='merFISH', cellid=None, topicid=None, ndec=4,
                  neighbor_mode='NNeighbors', n_neighbors=500, eps=500, col_type='program', outdir='./', n_components=10, init='random',
-                 random_state=0, alpha_W=0, fraction=0.05, ncol=5, spot_size=100, multi_samples=False, tumor_only_est=False, plot_set=None, palette=None):
+                 random_state=0, alpha_W=0, is_filter_cell=True, is_filter_weights=True,
+                 plot=True, fraction=0.05, ncol=5, spot_size=100, multi_samples=False, tumor_only_est=False, plot_set=None, palette=None):
         self.adata_sub = adata_sub
         self.prop = prop
         self.program = program
@@ -42,6 +43,9 @@ class LandscapeEstimator:
         self.tumor_only_est = tumor_only_est
         self.plot_set = plot_set
         self.palette = palette
+        self.plot = plot
+        self.is_filter_cell = is_filter_cell
+        self.is_filter_weights = is_filter_weights
 
     def EstLandscape(self):
         adata_sub = self.adata_sub
@@ -68,18 +72,39 @@ class LandscapeEstimator:
         tumor_only_est = self.tumor_only_est
         plot_set = self.plot_set
         palette = self.palette
+        plot = self.plot
+        is_filter_cell = self.is_filter_cell
+        is_filter_weights = self.is_filter_weights
+
 
         os.makedirs(outdir+"/"+str(sample_name)+"/Tables/", exist_ok=True)
         os.makedirs(outdir+"/"+str(sample_name)+"/Plots/", exist_ok=True)
 
         # select informative topics
         if program is not None:
-            idx_topic=Sel_topics(program=program, ndec=ndec)
+        ## filter with all cells
+            if is_filter_cell==True:
+                # # select prop
+                prop2=np.array(prop)
+                sel_idx=[]
+                for ii in range((prop2.shape[1])):
+                    rr=np.ptp(prop2[:,ii])
+                    if rr>0.000000001:
+                        sel_idx.append(ii)
+                #Gene_Program=Gene_Program.iloc[:,sel_idx]
+                print(str(len(sel_idx))+" topics are selected after cell ragnefiltering.")
+                prop = prop[:,sel_idx]
+                topicid=topicid[sel_idx]
+                print(topicid)
+                #n_components=len(sel_idx)
+            if is_filter_weights==True:
+                idx_topic=Sel_topics(program=program, ndec=ndec)
         else:
             idx_topic=np.array(range(prop.shape[1]))
 
         prop_filtered=prop[:,idx_topic]
         topicid=topicid[idx_topic]
+        print(topicid)
         print(str(len(idx_topic))+" topics are selected after filtering.")
         #print(prop_filtered)
     
@@ -169,9 +194,9 @@ class LandscapeEstimator:
         elif neighbor_mode=='radius':
             outpath = outdir+"/"+str(sample_name)+"/Plots/"+"/"+str(assay)+"_"+str(sample_name)+"_eps_"+str(eps)+"_Sectopics_ncomp_"+str(n_components)+"_alpha_W_"+str(alpha_W)+"_"
 
-        
-        tmp0=PlotMajCluster(adata=adata_sub,majcluster=clusters_W, outpath=outpath0,  spot_size=spot_size, sample_name=sample_name, label='SecTopic', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set, palette=palette)
-        tmp=PlotActivity(adata=adata_sub,prop=W, outpath=outpath, fraction=fraction, ncol=ncol, spot_size=spot_size, random_state=random_state, sample_name=sample_name, label='SecTopic', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set)
+        if plot==True:
+            tmp0=PlotMajCluster(adata=adata_sub,majcluster=clusters_W, outpath=outpath0,  spot_size=spot_size, sample_name=sample_name, label='SecTopic', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set, palette=palette)
+            tmp=PlotActivity(adata=adata_sub,prop=W, outpath=outpath, fraction=fraction, ncol=ncol, spot_size=spot_size, random_state=random_state, sample_name=sample_name, label='SecTopic', ntopics=n_components, multi_samples=multi_samples, plot_set=plot_set)
 
         print("Landscape estimation completed!")
 
